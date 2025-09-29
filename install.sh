@@ -1,9 +1,17 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+IFS=$'\n\t'
+trap 'echo "Error on line $LINENO: $BASH_COMMAND" >&2' ERR
+
 export CUDA_VER=12.9
-export RAPIDS_REL=25.08.0        
+export RAPIDS_VER=25.08.0        
 export SPARK_VER=3.5.6
 export SCALA_BIN=2.12             
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 export NPROC=$(nproc)
+
+# Derived variables
+export CUDA_VER_DASH=${CUDA_VER/./-}
 
 sudo apt-get update
 sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
@@ -32,40 +40,38 @@ sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
 # install nvidia driver
 sudo apt install -y nvidia-driver-570-server nvidia-utils-570-server
 
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+# install CUDA toolkit matching the OS version
+UBUNTU_VERSION=$(lsb_release -rs || echo "")
+if [[ "$UBUNTU_VERSION" == 22.04* ]]; then
+  CUDA_REPO_SUFFIX="ubuntu2204"
+elif [[ "$UBUNTU_VERSION" == 20.04* ]]; then
+  CUDA_REPO_SUFFIX="ubuntu2004"
+else
+  # default to 22.04 repo if detection fails
+  CUDA_REPO_SUFFIX="ubuntu2204"
+fi
+
+wget "https://developer.download.nvidia.com/compute/cuda/repos/${CUDA_REPO_SUFFIX}/x86_64/cuda-keyring_1.1-1_all.deb"
 sudo dpkg -i cuda-keyring_1.1-1_all.deb
 sudo apt-get update
-sudo apt-get install -y cuda-toolkit-12-9
+sudo apt-get install -y "cuda-toolkit-${CUDA_VER_DASH}"
 
-echo 'export PATH=/usr/local/cuda-12.9/bin:$PATH' | sudo tee /etc/profile.d/cuda.sh
-echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.9/lib64:$LD_LIBRARY_PATH' | sudo tee -a /etc/profile.d/cuda.sh
+echo "export PATH=/usr/local/cuda-${CUDA_VER}/bin:\$PATH" | sudo tee /etc/profile.d/cuda.sh
+echo "export LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VER}/lib64:\$LD_LIBRARY_PATH" | sudo tee -a /etc/profile.d/cuda.sh
 source /etc/profile.d/cuda.sh
 
 nvidia-smi
 nvcc --version
 
-
-# install cuda 12.9
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb
-sudo dpkg -i cuda-keyring_1.1-1_all.deb
-sudo apt update
-sudo apt install -y cuda-toolkit-12-9
-
-echo 'export PATH=/usr/local/cuda-12.9/bin:$PATH' | sudo tee /etc/profile.d/cuda.sh
-echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.9/lib64:$LD_LIBRARY_PATH' | sudo tee -a /etc/profile.d/cuda.sh
-source /etc/profile.d/cuda.sh
-
-nvcc --version
-
 # install spark
 cd $HOME && git clone https://github.com/apache/spark.git
-cd spark && git checkout v3.5.6
+cd spark && git checkout v${SPARK_VER}
 git clean -xfd
 rm -rf ~/.m2/repository/org/apache/spark
 
 ./dev/make-distribution.sh \
   --name nocuda \
-  -Phadoop-3 -Pscala-2.12 \
+  -Phadoop-3 -Pscala-${SCALA_BIN} \
   -DskipTests -Dmaven.test.skip=true
 
 # build distribution incl. Hive & ThriftServer (still skipping tests)
@@ -78,7 +84,7 @@ rm -rf ~/.m2/repository/org/apache/spark
 ls -lh ./dist
 
 export SPARK_HOME="$HOME/spark/dist"
-[ -x "$SPARK_HOME/bin/spark-shell" ] && echo "OK: $SPARK_HOME" || echo "BAD path"
+[ -x "$SPARK_HOME/bin/spark-shell" ] && echo "OK: $SPARK_HOME" || { echo "BAD path" >&2; exit 1; }
 
 echo 'export SPARK_HOME="$HOME/spark/dist"' >> ~/.bashrc
 echo 'export PATH="$SPARK_HOME/bin:$PATH"'  >> ~/.bashrc
@@ -91,8 +97,7 @@ cat "$SPARK_HOME/RELEASE"
 
 
 
-export RAPIDS_VER=25.08.0
-export SCALA_BIN=2.12          
+# RAPIDS versions and Scala binary version already exported above
 export SPARK_HOME="$HOME/spark/dist"
 mkdir -p "$SPARK_HOME/jars/rapids"
 
@@ -118,8 +123,8 @@ ls -lh "$SPARK_HOME/jars/"
   --conf spark.rapids.sql.enabled=true \
   --conf spark.rapids.sql.explain=ALL \
   --conf spark.rapids.sql.allowMultipleJars=ALWAYS \
-  --conf spark.executor.extraLibraryPath=/usr/local/cuda-12.9/lib64 \
-  --conf spark.driver.extraLibraryPath=/usr/local/cuda-12.9/lib64 \
+  --conf spark.executor.extraLibraryPath=/usr/local/cuda-${CUDA_VER}/lib64 \
+  --conf spark.driver.extraLibraryPath=/usr/local/cuda-${CUDA_VER}/lib64 \
   -i <(cat <<'SCALA'
 val df = spark.range(0, 20000000).selectExpr("id","id % 10 AS g")
 println("GPU running... " + df.groupBy("g").count().collect().mkString(","))
