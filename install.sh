@@ -13,6 +13,23 @@ export NPROC=$(nproc)
 # Derived variables
 export CUDA_VER_DASH=${CUDA_VER/./-}
 
+# Args: default to spark-only; use --all to include GPU drivers, CUDA and RAPIDS
+INSTALL_ALL=false
+for arg in "$@"; do
+  case "$arg" in
+    --all)
+      INSTALL_ALL=true
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: $0 [--all]"
+      echo "  --all   Install NVIDIA driver, CUDA toolkit, and RAPIDS in addition to Spark"
+      exit 0
+      ;;
+    *) ;;
+  esac
+done
+
 sudo apt-get update
 sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
     software-properties-common pciutils
@@ -30,38 +47,38 @@ source "$HOME/.sdkman/bin/sdkman-init.sh"
 sdk install maven 3.9.6
 mvn -v
 
-# check ubuntu version
-lsb_release -a
-
-sudo apt update
-sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
-    software-properties-common pciutils
-
-# install nvidia driver
-sudo apt install -y nvidia-driver-570-server nvidia-utils-570-server
-
-# install CUDA toolkit matching the OS version
-UBUNTU_VERSION=$(lsb_release -rs || echo "")
-if [[ "$UBUNTU_VERSION" == 22.04* ]]; then
-  CUDA_REPO_SUFFIX="ubuntu2204"
-elif [[ "$UBUNTU_VERSION" == 20.04* ]]; then
-  CUDA_REPO_SUFFIX="ubuntu2004"
-else
-  # default to 22.04 repo if detection fails
-  CUDA_REPO_SUFFIX="ubuntu2204"
+if [ "$INSTALL_ALL" = true ]; then
+  # check ubuntu version
+  lsb_release -a | cat
 fi
 
-wget "https://developer.download.nvidia.com/compute/cuda/repos/${CUDA_REPO_SUFFIX}/x86_64/cuda-keyring_1.1-1_all.deb"
-sudo dpkg -i cuda-keyring_1.1-1_all.deb
-sudo apt-get update
-sudo apt-get install -y "cuda-toolkit-${CUDA_VER_DASH}"
+if [ "$INSTALL_ALL" = true ]; then
+  # install nvidia driver
+  sudo apt install -y nvidia-driver-570-server nvidia-utils-570-server
 
-echo "export PATH=/usr/local/cuda-${CUDA_VER}/bin:\$PATH" | sudo tee /etc/profile.d/cuda.sh
-echo "export LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VER}/lib64:\$LD_LIBRARY_PATH" | sudo tee -a /etc/profile.d/cuda.sh
-source /etc/profile.d/cuda.sh
+  # install CUDA toolkit matching the OS version
+  UBUNTU_VERSION=$(lsb_release -rs || echo "")
+  if [[ "$UBUNTU_VERSION" == 22.04* ]]; then
+    CUDA_REPO_SUFFIX="ubuntu2204"
+  elif [[ "$UBUNTU_VERSION" == 20.04* ]]; then
+    CUDA_REPO_SUFFIX="ubuntu2004"
+  else
+    # default to 22.04 repo if detection fails
+    CUDA_REPO_SUFFIX="ubuntu2204"
+  fi
 
-nvidia-smi
-nvcc --version
+  wget "https://developer.download.nvidia.com/compute/cuda/repos/${CUDA_REPO_SUFFIX}/x86_64/cuda-keyring_1.1-1_all.deb"
+  sudo dpkg -i cuda-keyring_1.1-1_all.deb
+  sudo apt-get update
+  sudo apt-get install -y "cuda-toolkit-${CUDA_VER_DASH}"
+
+  echo "export PATH=/usr/local/cuda-${CUDA_VER}/bin:\$PATH" | sudo tee /etc/profile.d/cuda.sh
+  echo "export LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VER}/lib64:\$LD_LIBRARY_PATH" | sudo tee -a /etc/profile.d/cuda.sh
+  source /etc/profile.d/cuda.sh
+
+  nvidia-smi | cat
+  nvcc --version
+fi
 
 # install spark
 cd $HOME && git clone https://github.com/apache/spark.git
@@ -97,39 +114,40 @@ cat "$SPARK_HOME/RELEASE"
 
 
 
-# RAPIDS versions and Scala binary version already exported above
-export SPARK_HOME="$HOME/spark/dist"
-mkdir -p "$SPARK_HOME/jars/rapids"
+if [ "$INSTALL_ALL" = true ]; then
+  # RAPIDS versions and Scala binary version already exported above
+  export SPARK_HOME="$HOME/spark/dist"
+  mkdir -p "$SPARK_HOME/jars/rapids"
 
-mvn -B -U dependency:get -Dartifact=com.nvidia:rapids-4-spark_${SCALA_BIN}:${RAPIDS_VER}
-mvn -B -U dependency:get -Dartifact=com.nvidia:spark-rapids-jni:${RAPIDS_VER}
-mvn -B -U dependency:get -Dartifact=ai.rapids:cudf:${RAPIDS_VER}
+  mvn -B -U dependency:get -Dartifact=com.nvidia:rapids-4-spark_${SCALA_BIN}:${RAPIDS_VER}
+  mvn -B -U dependency:get -Dartifact=com.nvidia:spark-rapids-jni:${RAPIDS_VER}
+  mvn -B -U dependency:get -Dartifact=ai.rapids:cudf:${RAPIDS_VER}
 
-cp ~/.m2/repository/com/nvidia/rapids-4-spark_${SCALA_BIN}/${RAPIDS_VER}/rapids-4-spark_${SCALA_BIN}-${RAPIDS_VER}.jar \
-   "$SPARK_HOME/jars/rapids/"
-cp ~/.m2/repository/com/nvidia/spark-rapids-jni/${RAPIDS_VER}/spark-rapids-jni-${RAPIDS_VER}.jar \
-   "$SPARK_HOME/jars/rapids/"
-cp ~/.m2/repository/ai/rapids/cudf/${RAPIDS_VER}/cudf-${RAPIDS_VER}.jar \
-   "$SPARK_HOME/jars/rapids/"
+  cp ~/.m2/repository/com/nvidia/rapids-4-spark_${SCALA_BIN}/${RAPIDS_VER}/rapids-4-spark_${SCALA_BIN}-${RAPIDS_VER}.jar \
+     "$SPARK_HOME/jars/rapids/"
+  cp ~/.m2/repository/com/nvidia/spark-rapids-jni/${RAPIDS_VER}/spark-rapids-jni-${RAPIDS_VER}.jar \
+     "$SPARK_HOME/jars/rapids/"
+  cp ~/.m2/repository/ai/rapids/cudf/${RAPIDS_VER}/cudf-${RAPIDS_VER}.jar \
+     "$SPARK_HOME/jars/rapids/"
 
-mv "$SPARK_HOME/jars/rapids/"*.jar "$SPARK_HOME/jars/"
+  mv "$SPARK_HOME/jars/rapids/"*.jar "$SPARK_HOME/jars/"
 
+  ls -lh "$SPARK_HOME/jars/"
 
-ls -lh "$SPARK_HOME/jars/"
-
-# check RAPIDS
-"$SPARK_HOME/bin/spark-shell" --master local[1] \
-  --conf spark.plugins=com.nvidia.spark.SQLPlugin \
-  --conf spark.rapids.sql.enabled=true \
-  --conf spark.rapids.sql.explain=ALL \
-  --conf spark.rapids.sql.allowMultipleJars=ALWAYS \
-  --conf spark.executor.extraLibraryPath=/usr/local/cuda-${CUDA_VER}/lib64 \
-  --conf spark.driver.extraLibraryPath=/usr/local/cuda-${CUDA_VER}/lib64 \
-  -i <(cat <<'SCALA'
+  # check RAPIDS
+  "$SPARK_HOME/bin/spark-shell" --master local[1] \
+    --conf spark.plugins=com.nvidia.spark.SQLPlugin \
+    --conf spark.rapids.sql.enabled=true \
+    --conf spark.rapids.sql.explain=ALL \
+    --conf spark.rapids.sql.allowMultipleJars=ALWAYS \
+    --conf spark.executor.extraLibraryPath=/usr/local/cuda-${CUDA_VER}/lib64 \
+    --conf spark.driver.extraLibraryPath=/usr/local/cuda-${CUDA_VER}/lib64 \
+    -i <(cat <<'SCALA'
 val df = spark.range(0, 20000000).selectExpr("id","id % 10 AS g")
 println("GPU running... " + df.groupBy("g").count().collect().mkString(","))
 System.exit(0)
 SCALA
 )
+fi
 
 
