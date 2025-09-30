@@ -86,16 +86,16 @@ cd spark && git checkout v${SPARK_VER}
 git clean -xfd
 rm -rf ~/.m2/repository/org/apache/spark
 
-./dev/make-distribution.sh \
-  --name nocuda \
-  -Phadoop-3 -Pscala-${SCALA_BIN} \
-  -DskipTests -Dmaven.test.skip=true
+# ./dev/make-distribution.sh \
+#   --name nocuda \
+#   -Phadoop-3 -Pscala-${SCALA_BIN} \
+#   -DskipTests -Dmaven.test.skip=true
 
 # build distribution incl. Hive & ThriftServer (still skipping tests)
-# ./dev/make-distribution.sh \
-#   --name withhive \
-#   -Phadoop-3 -Pscala-2.12 -Phive -Phive-thriftserver \
-#   -DskipTests -Dmaven.test.skip=true
+./dev/make-distribution.sh \
+  --name withhive \
+  -Phadoop-3 -Pscala-${SCALA_BIN} -Phive -Phive-thriftserver \
+  -DskipTests -Dmaven.test.skip=true
 
 
 ls -lh ./dist
@@ -150,4 +150,4 @@ SCALA
 )
 fi
 
-
+yes | sudo apt install python3-pip

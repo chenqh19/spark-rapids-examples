@@ -47,9 +47,17 @@ def _spark__init():
         _sb.config('spark.driver.extraJavaOptions', driver_opts)
         _handle_event_log_dir(_sb, 'gw0')
 
-    # enableHiveSupport() is needed for parquet bucket tests
-    _s = _sb.enableHiveSupport() \
-            .appName('rapids spark plugin integration tests (python)').getOrCreate()
+    # enableHiveSupport() is needed for parquet bucket tests; fall back if Hive is not available
+    try:
+        _s = _sb.enableHiveSupport() \
+                .appName('rapids spark plugin integration tests (python)').getOrCreate()
+    except Exception as e:
+        msg = str(e)
+        if 'HiveSessionStateBuilder' in msg or 'ClassNotFoundException' in msg or 'hive' in msg.lower():
+            print('Hive not available on classpath; starting Spark session without Hive support')
+            _s = _sb.appName('rapids spark plugin integration tests (python)').getOrCreate()
+        else:
+            raise
     #TODO catch the ClassNotFound error that happens if the classpath is not set up properly and
     # make it a better error message
     _s.sparkContext.setLogLevel("WARN")
