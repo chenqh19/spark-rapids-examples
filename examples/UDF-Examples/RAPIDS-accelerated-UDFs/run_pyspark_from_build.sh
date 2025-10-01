@@ -59,6 +59,8 @@ else
 
     "$SPARK_HOME"/bin/spark-submit --jars "${ALL_JARS// /,}" \
         --master local[1] \
+        --conf spark.executor.extraLibraryPath=/usr/local/cuda-12.9/lib64 \
+        --conf spark.driver.extraLibraryPath=/usr/local/cuda-12.9/lib64 \
         "${RUN_TESTS_COMMAND[@]}" "${TEST_COMMON_OPTS[@]}"
 
 fi
