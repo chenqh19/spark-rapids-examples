@@ -30,11 +30,11 @@ for arg in "$@"; do
   esac
 done
 
-sudo apt-get update
-sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
-    software-properties-common pciutils
-# sudo apt-get install -y build-essential git curl wget cmake ninja-build ccache \
-#     pkg-config autoconf libtool unzip zip software-properties-common
+if [ "$INSTALL_ALL" = true ]; then
+  sudo apt-get update
+  sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
+      software-properties-common pciutils
+fi
 
 # install openjdk-17-jdk
 sudo apt update
