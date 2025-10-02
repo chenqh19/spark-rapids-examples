@@ -3,6 +3,9 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 trap 'echo "Error on line $LINENO: $BASH_COMMAND" >&2' ERR
 
+export PS4='[[Running command]] '
+set -x
+
 export CUDA_VER=12.9
 export RAPIDS_VER=25.08.0        
 export SPARK_VER=3.5.6
@@ -30,55 +33,55 @@ for arg in "$@"; do
   esac
 done
 
-if [ "$INSTALL_ALL" = true ]; then
-  sudo apt-get update
-  sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
-      software-properties-common pciutils
-fi
+# if [ "$INSTALL_ALL" = true ]; then
+#   sudo apt-get update
+#   sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
+#       software-properties-common pciutils
+# fi
 
-# install openjdk-17-jdk
-sudo apt update
-sudo apt install -y build-essential git cmake ninja-build ccache pkg-config \
-  openjdk-17-jdk curl wget unzip zip
+# # install openjdk-17-jdk
+# sudo apt update
+# sudo apt install -y build-essential git cmake ninja-build ccache pkg-config \
+#   openjdk-17-jdk curl wget unzip zip
 
-# install maven
-curl -s "https://get.sdkman.io" | bash
-source "$HOME/.sdkman/bin/sdkman-init.sh"
-sdk install maven 3.9.6
-mvn -v
+# # install maven
+# curl -s "https://get.sdkman.io" | bash
+# source "$HOME/.sdkman/bin/sdkman-init.sh"
+# sdk install maven 3.9.6
+# mvn -v
 
-if [ "$INSTALL_ALL" = true ]; then
-  # check ubuntu version
-  lsb_release -a | cat
-fi
+# if [ "$INSTALL_ALL" = true ]; then
+#   # check ubuntu version
+#   lsb_release -a | cat
+# fi
 
-if [ "$INSTALL_ALL" = true ]; then
-  # install nvidia driver
-  sudo apt install -y nvidia-driver-570-server nvidia-utils-570-server
+# if [ "$INSTALL_ALL" = true ]; then
+#   # install nvidia driver
+#   sudo apt install -y nvidia-driver-570-server nvidia-utils-570-server
 
-  # install CUDA toolkit matching the OS version
-  UBUNTU_VERSION=$(lsb_release -rs || echo "")
-  if [[ "$UBUNTU_VERSION" == 22.04* ]]; then
-    CUDA_REPO_SUFFIX="ubuntu2204"
-  elif [[ "$UBUNTU_VERSION" == 20.04* ]]; then
-    CUDA_REPO_SUFFIX="ubuntu2004"
-  else
-    # default to 22.04 repo if detection fails
-    CUDA_REPO_SUFFIX="ubuntu2204"
-  fi
+#   # install CUDA toolkit matching the OS version
+#   UBUNTU_VERSION=$(lsb_release -rs || echo "")
+#   if [[ "$UBUNTU_VERSION" == 22.04* ]]; then
+#     CUDA_REPO_SUFFIX="ubuntu2204"
+#   elif [[ "$UBUNTU_VERSION" == 20.04* ]]; then
+#     CUDA_REPO_SUFFIX="ubuntu2004"
+#   else
+#     # default to 22.04 repo if detection fails
+#     CUDA_REPO_SUFFIX="ubuntu2204"
+#   fi
 
-  wget "https://developer.download.nvidia.com/compute/cuda/repos/${CUDA_REPO_SUFFIX}/x86_64/cuda-keyring_1.1-1_all.deb"
-  sudo dpkg -i cuda-keyring_1.1-1_all.deb
-  sudo apt-get update
-  sudo apt-get install -y "cuda-toolkit-${CUDA_VER_DASH}"
+#   wget "https://developer.download.nvidia.com/compute/cuda/repos/${CUDA_REPO_SUFFIX}/x86_64/cuda-keyring_1.1-1_all.deb"
+#   sudo dpkg -i cuda-keyring_1.1-1_all.deb
+#   sudo apt-get update
+#   sudo apt-get install -y "cuda-toolkit-${CUDA_VER_DASH}"
 
-  echo "export PATH=/usr/local/cuda-${CUDA_VER}/bin:\$PATH" | sudo tee /etc/profile.d/cuda.sh
-  echo "export LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VER}/lib64:\$LD_LIBRARY_PATH" | sudo tee -a /etc/profile.d/cuda.sh
-  source /etc/profile.d/cuda.sh
+#   echo "export PATH=/usr/local/cuda-12.9/bin:\$PATH" | sudo tee /etc/profile.d/cuda.sh
+#   echo "export LD_LIBRARY_PATH=/usr/local/cuda-12.9/lib64:\$LD_LIBRARY_PATH" | sudo tee -a /etc/profile.d/cuda.sh
+#   source /etc/profile.d/cuda.sh
 
-  nvidia-smi | cat
-  nvcc --version
-fi
+#   nvidia-smi | cat
+#   nvcc --version
+# fi
 
 # install spark
 cd $HOME && git clone https://github.com/apache/spark.git
@@ -94,7 +97,7 @@ rm -rf ~/.m2/repository/org/apache/spark
 # build distribution incl. Hive & ThriftServer (still skipping tests)
 ./dev/make-distribution.sh \
   --name withhive \
-  -Phadoop-3 -Pscala-${SCALA_BIN} -Phive -Phive-thriftserver \
+  -Phadoop-3 -Pscala-2.12 -Phive -Phive-thriftserver \
   -DskipTests -Dmaven.test.skip=true
 
 
@@ -119,15 +122,15 @@ if [ "$INSTALL_ALL" = true ]; then
   export SPARK_HOME="$HOME/spark/dist"
   mkdir -p "$SPARK_HOME/jars/rapids"
 
-  mvn -B -U dependency:get -Dartifact=com.nvidia:rapids-4-spark_${SCALA_BIN}:${RAPIDS_VER}
-  mvn -B -U dependency:get -Dartifact=com.nvidia:spark-rapids-jni:${RAPIDS_VER}
-  mvn -B -U dependency:get -Dartifact=ai.rapids:cudf:${RAPIDS_VER}
+  mvn -B -U dependency:get -Dartifact=com.nvidia:rapids-4-spark_2.12:25.08.0
+  mvn -B -U dependency:get -Dartifact=com.nvidia:spark-rapids-jni:25.08.0
+  mvn -B -U dependency:get -Dartifact=ai.rapids:cudf:25.08.0
 
-  cp ~/.m2/repository/com/nvidia/rapids-4-spark_${SCALA_BIN}/${RAPIDS_VER}/rapids-4-spark_${SCALA_BIN}-${RAPIDS_VER}.jar \
+  cp ~/.m2/repository/com/nvidia/rapids-4-spark_2.12/25.08.0/rapids-4-spark_2.12-25.08.0.jar \
      "$SPARK_HOME/jars/rapids/"
-  cp ~/.m2/repository/com/nvidia/spark-rapids-jni/${RAPIDS_VER}/spark-rapids-jni-${RAPIDS_VER}.jar \
+  cp ~/.m2/repository/com/nvidia/spark-rapids-jni/25.08.0/spark-rapids-jni-25.08.0.jar \
      "$SPARK_HOME/jars/rapids/"
-  cp ~/.m2/repository/ai/rapids/cudf/${RAPIDS_VER}/cudf-${RAPIDS_VER}.jar \
+  cp ~/.m2/repository/ai/rapids/cudf/25.08.0/cudf-25.08.0.jar \
      "$SPARK_HOME/jars/rapids/"
 
   mv "$SPARK_HOME/jars/rapids/"*.jar "$SPARK_HOME/jars/"
@@ -140,8 +143,8 @@ if [ "$INSTALL_ALL" = true ]; then
     --conf spark.rapids.sql.enabled=true \
     --conf spark.rapids.sql.explain=ALL \
     --conf spark.rapids.sql.allowMultipleJars=ALWAYS \
-    --conf spark.executor.extraLibraryPath=/usr/local/cuda-${CUDA_VER}/lib64 \
-    --conf spark.driver.extraLibraryPath=/usr/local/cuda-${CUDA_VER}/lib64 \
+    --conf spark.executor.extraLibraryPath=/usr/local/cuda-12.9/lib64 \
+    --conf spark.driver.extraLibraryPath=/usr/local/cuda-12.9/lib64 \
     -i <(cat <<'SCALA'
 val df = spark.range(0, 20000000).selectExpr("id","id % 10 AS g")
 println("GPU running... " + df.groupBy("g").count().collect().mkString(","))
@@ -151,3 +154,4 @@ SCALA
 fi
 
 yes | sudo apt install python3-pip
+pip install nvidia-ml-py3
