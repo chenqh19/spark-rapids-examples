@@ -110,8 +110,17 @@ source ~/.bashrc
 "$SPARK_HOME/bin/spark-submit" --version
 "$SPARK_HOME/bin/spark-shell"  --version
 cat "$SPARK_HOME/RELEASE"
-"$SPARK_HOME/bin/run-example" SparkPi 1000
 
+# check spark
+"$SPARK_HOME/bin/run-example" SparkPi 1000
+"$SPARK_HOME/bin/spark-shell" --master local[*] -i <(cat <<'SCALA'
+val df = spark.range(0, 20000000).selectExpr("id","id % 10 AS g")
+val agg = df.groupBy("g").count()
+agg.explain("extended") // shows parsed, analyzed, optimized, and physical plan
+println("Result: " + agg.collect().mkString(","))
+System.exit(0)
+SCALA
+)
 
 
 if [ "$INSTALL_ALL" = true ]; then
