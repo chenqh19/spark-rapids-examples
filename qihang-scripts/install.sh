@@ -59,7 +59,12 @@ fi
 
 if [ "$INSTALL_ALL" = true ]; then
   # install nvidia driver
-  sudo apt install -y nvidia-driver-570-server nvidia-utils-570-server
+  # prevent nouveau from binding the GPUs and prepare nvidia-drm KMS
+  echo -e 'blacklist nouveau\noptions nouveau modeset=0' | sudo tee /etc/modprobe.d/blacklist-nouveau.conf >/dev/null
+  echo 'options nvidia-drm modeset=1' | sudo tee /etc/modprobe.d/nvidia-drm.conf >/dev/null
+  sudo update-initramfs -u
+
+  sudo apt-get update && sudo dpkg --configure -a && sudo apt-get -y --fix-broken install && sudo apt-get install -y -o APT::Immediate-Configure=0 --no-install-recommends nvidia-driver-570-server nvidia-utils-570-server nvidia-modprobe
 
   # install CUDA toolkit matching the OS version
   UBUNTU_VERSION=$(lsb_release -rs || echo "")
@@ -81,7 +86,13 @@ if [ "$INSTALL_ALL" = true ]; then
   echo "export LD_LIBRARY_PATH=/usr/local/cuda-12.9/lib64:\$LD_LIBRARY_PATH" | sudo tee -a /etc/profile.d/cuda.sh
   source /etc/profile.d/cuda.sh
 
-  nvidia-smi | cat
+  # try to switch to NVIDIA driver without reboot; reboot may still be required on some systems
+  (sudo modprobe -r nouveau || true)
+  (sudo modprobe nvidia nvidia_uvm nvidia_modeset nvidia_drm || true)
+  (sudo systemctl start nvidia-persistenced || true)
+  (command -v nvidia-modprobe >/dev/null 2>&1 && sudo nvidia-modprobe -u -c0 || true)
+
+  nvidia-smi | cat || echo 'WARN: nvidia-smi failed. A reboot may be required to detach nouveau and load NVIDIA driver.' >&2
   nvcc --version
 fi
 
@@ -104,10 +115,8 @@ rm -rf ~/.m2/repository/org/apache/spark
 
 
 ls -lh ./dist
-
 export SPARK_HOME="$HOME/spark/dist"
 [ -x "$SPARK_HOME/bin/spark-shell" ] && echo "OK: $SPARK_HOME" || { echo "BAD path" >&2; exit 1; }
-
 echo 'export SPARK_HOME="$HOME/spark/dist"' >> ~/.bashrc
 echo 'export PATH="$SPARK_HOME/bin:$PATH"'  >> ~/.bashrc
 source ~/.bashrc
