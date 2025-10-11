@@ -33,55 +33,57 @@ for arg in "$@"; do
   esac
 done
 
-# if [ "$INSTALL_ALL" = true ]; then
-#   sudo apt-get update
-#   sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
-#       software-properties-common pciutils
-# fi
+if [ "$INSTALL_ALL" = true ]; then
+  sudo apt-get update
+  sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
+      software-properties-common pciutils
+fi
 
-# # install openjdk-17-jdk
-# sudo apt update
-# sudo apt install -y build-essential git cmake ninja-build ccache pkg-config \
-#   openjdk-17-jdk curl wget unzip zip
+# install openjdk-17-jdk
+sudo apt update
+sudo apt install -y build-essential git cmake ninja-build ccache pkg-config \
+  openjdk-17-jdk curl wget unzip zip
 
-# # install maven
-# curl -s "https://get.sdkman.io" | bash
-# source "$HOME/.sdkman/bin/sdkman-init.sh"
-# sdk install maven 3.9.6
-# mvn -v
+# install maven
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install maven 3.9.6
+mvn -v
+sdk install scala 2.12.18
+scalac -version
 
-# if [ "$INSTALL_ALL" = true ]; then
-#   # check ubuntu version
-#   lsb_release -a | cat
-# fi
+if [ "$INSTALL_ALL" = true ]; then
+  # check ubuntu version
+  lsb_release -a | cat
+fi
 
-# if [ "$INSTALL_ALL" = true ]; then
-#   # install nvidia driver
-#   sudo apt install -y nvidia-driver-570-server nvidia-utils-570-server
+if [ "$INSTALL_ALL" = true ]; then
+  # install nvidia driver
+  sudo apt install -y nvidia-driver-570-server nvidia-utils-570-server
 
-#   # install CUDA toolkit matching the OS version
-#   UBUNTU_VERSION=$(lsb_release -rs || echo "")
-#   if [[ "$UBUNTU_VERSION" == 22.04* ]]; then
-#     CUDA_REPO_SUFFIX="ubuntu2204"
-#   elif [[ "$UBUNTU_VERSION" == 20.04* ]]; then
-#     CUDA_REPO_SUFFIX="ubuntu2004"
-#   else
-#     # default to 22.04 repo if detection fails
-#     CUDA_REPO_SUFFIX="ubuntu2204"
-#   fi
+  # install CUDA toolkit matching the OS version
+  UBUNTU_VERSION=$(lsb_release -rs || echo "")
+  if [[ "$UBUNTU_VERSION" == 22.04* ]]; then
+    CUDA_REPO_SUFFIX="ubuntu2204"
+  elif [[ "$UBUNTU_VERSION" == 20.04* ]]; then
+    CUDA_REPO_SUFFIX="ubuntu2004"
+  else
+    # default to 22.04 repo if detection fails
+    CUDA_REPO_SUFFIX="ubuntu2204"
+  fi
 
-#   wget "https://developer.download.nvidia.com/compute/cuda/repos/${CUDA_REPO_SUFFIX}/x86_64/cuda-keyring_1.1-1_all.deb"
-#   sudo dpkg -i cuda-keyring_1.1-1_all.deb
-#   sudo apt-get update
-#   sudo apt-get install -y "cuda-toolkit-${CUDA_VER_DASH}"
+  wget "https://developer.download.nvidia.com/compute/cuda/repos/${CUDA_REPO_SUFFIX}/x86_64/cuda-keyring_1.1-1_all.deb"
+  sudo dpkg -i cuda-keyring_1.1-1_all.deb
+  sudo apt-get update
+  sudo apt-get install -y "cuda-toolkit-${CUDA_VER_DASH}"
 
-#   echo "export PATH=/usr/local/cuda-12.9/bin:\$PATH" | sudo tee /etc/profile.d/cuda.sh
-#   echo "export LD_LIBRARY_PATH=/usr/local/cuda-12.9/lib64:\$LD_LIBRARY_PATH" | sudo tee -a /etc/profile.d/cuda.sh
-#   source /etc/profile.d/cuda.sh
+  echo "export PATH=/usr/local/cuda-12.9/bin:\$PATH" | sudo tee /etc/profile.d/cuda.sh
+  echo "export LD_LIBRARY_PATH=/usr/local/cuda-12.9/lib64:\$LD_LIBRARY_PATH" | sudo tee -a /etc/profile.d/cuda.sh
+  source /etc/profile.d/cuda.sh
 
-#   nvidia-smi | cat
-#   nvcc --version
-# fi
+  nvidia-smi | cat
+  nvcc --version
+fi
 
 # install spark
 cd $HOME && git clone https://github.com/apache/spark.git
@@ -124,7 +126,6 @@ println("Result: " + agg.collect().mkString(","))
 System.exit(0)
 SCALA
 )
-
 
 if [ "$INSTALL_ALL" = true ]; then
   # RAPIDS versions and Scala binary version already exported above
