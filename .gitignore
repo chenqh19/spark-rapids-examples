@@ -22,3 +22,6 @@
 .settings
 hs_err*.log
 target
+datasets/
+spark-sql-perf/
+tpcds-kit/
