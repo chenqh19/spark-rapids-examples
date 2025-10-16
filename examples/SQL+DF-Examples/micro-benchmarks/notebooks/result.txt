@@ -2,3 +2,4 @@ Expand&HashAggregate,3,2
 Windowing without skew,7,2
 Windowing with skew,7,2
 NDS Q14a subquery,12,2
+Expand&HashAggregate,4,2
