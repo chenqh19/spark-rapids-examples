@@ -4,69 +4,93 @@ import pynvml as nvml
 import matplotlib.pyplot as plt
 
 SAMPLE_MS = 50
-DURATION_S = 10
+DURATION_S = 100
 GPU_INDEX = 0
 
-nvml.nvmlInit()
-h = nvml.nvmlDeviceGetHandleByIndex(GPU_INDEX)
-rx = nvml.NVML_PCIE_UTIL_RX_BYTES
-tx = nvml.NVML_PCIE_UTIL_TX_BYTES
+def collect_utilization(sample_ms=SAMPLE_MS, duration_s=DURATION_S, gpu_index=GPU_INDEX):
+    nvml.nvmlInit()
+    h = nvml.nvmlDeviceGetHandleByIndex(gpu_index)
+    rx = nvml.NVML_PCIE_UTIL_RX_BYTES
+    tx = nvml.NVML_PCIE_UTIL_TX_BYTES
 
-ts, sm, mem, vram, rx_kbs, tx_kbs = [], [], [], [], [], []
-start = time.time()
-stop = False
+    ts, sm, mem, vram, rx_kbs, tx_kbs = [], [], [], [], [], []
+    start = time.time()
+    stop = False
 
-def poll():
-    def get_util():
-        return nvml.nvmlDeviceGetUtilizationRates(h)
+    def poll():
+        def get_util():
+                return nvml.nvmlDeviceGetUtilizationRates(h)
 
-    def get_mem():
-        return nvml.nvmlDeviceGetMemoryInfo(h)
+        def get_mem():
+                return nvml.nvmlDeviceGetMemoryInfo(h)
 
-    def get_pcie():
-        try:
-            r = nvml.nvmlDeviceGetPcieThroughput(h, rx)  # KB/s
-            w = nvml.nvmlDeviceGetPcieThroughput(h, tx)
-        except nvml.NVMLError:
-            r = w = 0
-        return r, w
+        def get_pcie():
+            try:
+                r = nvml.nvmlDeviceGetPcieThroughput(h, rx)  # KB/s
+                w = nvml.nvmlDeviceGetPcieThroughput(h, tx)
+            except nvml.NVMLError:
+                r = w = 0
+            return r, w
 
-    while not stop:
-        with ThreadPoolExecutor(max_workers=4) as ex:
-            fu = ex.submit(get_util)
-            fm = ex.submit(get_mem)
-            fp = ex.submit(get_pcie)
-            fs = ex.submit(time.sleep, SAMPLE_MS/1000.0)
-            wait([fu, fm, fp, fs], return_when=ALL_COMPLETED)
-        # After all 4 complete, record a sample
-        t = (time.time()-start)*1000.0
-        u = fu.result()
-        m = fm.result()
-        r, w = fp.result()
-        ts.append(t); sm.append(u.gpu); mem.append(u.memory); vram.append(m.used/1e6); rx_kbs.append(r); tx_kbs.append(w)
+    # Warm up interval so NVML has a sampling window before first read
+        time.sleep(sample_ms/1000.0)
+        while not stop:
+            time.sleep(sample_ms/1000.0)
+            with ThreadPoolExecutor(max_workers=3) as ex:
+                fu = ex.submit(get_util)
+                fm = ex.submit(get_mem)
+                fp = ex.submit(get_pcie)
+                wait([fu, fm, fp], return_when=ALL_COMPLETED)
+            # After all complete, record a sample taken for this interval
+            t = (time.time()-start)*1000.0
+            u = fu.result()
+            m = fm.result()
+            r, w = fp.result()
+            ts.append(t); sm.append(u.gpu); mem.append(u.memory); vram.append(m.used/1e6); rx_kbs.append(r); tx_kbs.append(w)
 
-thr = threading.Thread(target=poll, daemon=True); thr.start()
-# ... run your Spark action here ...
-time.sleep(DURATION_S)  # or join on your job
-stop = True; thr.join()
+    thr = threading.Thread(target=poll, daemon=True)
+    thr.start()
+    time.sleep(duration_s)
+    stop = True
+    thr.join()
+    return ts, sm, mem, vram, rx_kbs, tx_kbs
 
-# Write CSV: one row per datapoint
-out_csv = "gpu_utilization.csv"
-with open(out_csv, "w", newline="") as f:
-    w = csv.writer(f)
-    w.writerow(["ms", "sm_util_pct", "mem_util_pct", "vram_used_mb", "pcie_rx_kbs", "pcie_tx_kbs"])
-    for i in range(len(ts)):
-        w.writerow([f"{ts[i]:.3f}", sm[i], mem[i], f"{vram[i]:.3f}", rx_kbs[i], tx_kbs[i]])
+# --- Utilities to store and plot ---
+def write_csv(ts, sm, mem, vram, rx_kbs, tx_kbs, out_csv="gpu_utilization.csv"):
+    with open(out_csv, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["ms", "sm_util_pct", "mem_util_pct", "vram_used_mb", "pcie_rx_kbs", "pcie_tx_kbs"])
+        for i in range(len(ts)):
+            w.writerow([f"{ts[i]:.3f}", sm[i], mem[i], f"{vram[i]:.3f}", rx_kbs[i], tx_kbs[i]])
+    return out_csv
 
-fig, ax = plt.subplots(1,1, figsize=(10,4))
-ax.plot(ts, sm, label='SM %')
-ax.plot(ts, mem, label='Mem %')
-ax.plot(ts, vram, label='VRAM MB')
-ax.plot(ts, rx_kbs, label='PCIe RX KB/s')
-ax.plot(ts, tx_kbs, label='PCIe TX KB/s')
-ax.set_xlabel('ms')
-ax.set_ylabel('value (mixed units)')
-ax.legend(loc='best', ncol=3)
-plt.tight_layout()
-fig.savefig("gpu_utilization.pdf", bbox_inches='tight')
-plt.show()
+def plot_from_csv(csv_path, pdf_path="gpu_utilization.pdf"):
+    t, sm_u, mem_u, vram_mb, rx, tx = [], [], [], [], [], []
+    with open(csv_path, "r") as f:
+        r = csv.reader(f)
+        header = next(r, None)
+        for row in r:
+            if len(row) < 6:
+                continue
+            t.append(float(row[0]))
+            sm_u.append(float(row[1]))
+            mem_u.append(float(row[2]))
+            vram_mb.append(float(row[3]))
+            rx.append(float(row[4]))
+            tx.append(float(row[5]))
+    fig, ax = plt.subplots(3,1, figsize=(10,7), sharex=True)
+    ax[0].plot(t, sm_u, label='SM %'); ax[0].plot(t, mem_u, label='Mem %')
+    ax[0].legend(); ax[0].set_ylabel('%')
+    ax[1].plot(t, vram_mb, label='VRAM MB')
+    ax[1].legend(); ax[1].set_ylabel('MB')
+    ax[2].plot(t, rx, label='PCIe RX KB/s'); ax[2].plot(t, tx, label='PCIe TX KB/s')
+    ax[2].legend(); ax[2].set_ylabel('KB/s'); ax[2].set_xlabel('ms')
+    plt.tight_layout()
+    fig.savefig(pdf_path, bbox_inches='tight')
+    plt.show()
+
+if __name__ == "__main__":
+    csv_path = "gpu_utilization.csv"
+    ts, sm, mem, vram, rx_kbs, tx_kbs = collect_utilization()
+    write_csv(ts, sm, mem, vram, rx_kbs, tx_kbs, csv_path)
+    plot_from_csv(csv_path)
