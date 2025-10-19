@@ -4,7 +4,7 @@ import pynvml as nvml
 import matplotlib.pyplot as plt
 
 SAMPLE_MS = 50
-DURATION_S = 100
+DURATION_S = 70
 GPU_INDEX = 0
 
 def collect_utilization(sample_ms=SAMPLE_MS, duration_s=DURATION_S, gpu_index=GPU_INDEX):
@@ -78,19 +78,19 @@ def plot_from_csv(csv_path, pdf_path="gpu_utilization.pdf"):
             vram_mb.append(float(row[3]))
             rx.append(float(row[4]))
             tx.append(float(row[5]))
-    fig, ax = plt.subplots(3,1, figsize=(10,7), sharex=True)
+    fig, ax = plt.subplots(2,1, figsize=(10,5), sharex=True)
     ax[0].plot(t, sm_u, label='SM %'); ax[0].plot(t, mem_u, label='Mem %')
     ax[0].legend(); ax[0].set_ylabel('%')
-    ax[1].plot(t, vram_mb, label='VRAM MB')
-    ax[1].legend(); ax[1].set_ylabel('MB')
-    ax[2].plot(t, rx, label='PCIe RX KB/s'); ax[2].plot(t, tx, label='PCIe TX KB/s')
-    ax[2].legend(); ax[2].set_ylabel('KB/s'); ax[2].set_xlabel('ms')
+    # ax[1].plot(t, vram_mb, label='VRAM MB')
+    # ax[1].legend(); ax[1].set_ylabel('MB')
+    ax[1].plot(t, rx, label='PCIe RX KB/s'); ax[1].plot(t, tx, label='PCIe TX KB/s')
+    ax[1].legend(); ax[1].set_ylabel('KB/s'); ax[1].set_xlabel('ms')
     plt.tight_layout()
     fig.savefig(pdf_path, bbox_inches='tight')
     plt.show()
 
 if __name__ == "__main__":
     csv_path = "gpu_utilization.csv"
-    ts, sm, mem, vram, rx_kbs, tx_kbs = collect_utilization()
-    write_csv(ts, sm, mem, vram, rx_kbs, tx_kbs, csv_path)
+    # ts, sm, mem, vram, rx_kbs, tx_kbs = collect_utilization()
+    # write_csv(ts, sm, mem, vram, rx_kbs, tx_kbs, csv_path)
     plot_from_csv(csv_path)
