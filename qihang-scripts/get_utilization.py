@@ -4,7 +4,7 @@ import pynvml as nvml
 import matplotlib.pyplot as plt
 
 SAMPLE_MS = 50
-DURATION_S = 70
+DURATION_S = 80
 GPU_INDEX = 0
 
 def collect_utilization(sample_ms=SAMPLE_MS, duration_s=DURATION_S, gpu_index=GPU_INDEX):
@@ -91,6 +91,6 @@ def plot_from_csv(csv_path, pdf_path="gpu_utilization.pdf"):
 
 if __name__ == "__main__":
     csv_path = "gpu_utilization.csv"
-    # ts, sm, mem, vram, rx_kbs, tx_kbs = collect_utilization()
-    # write_csv(ts, sm, mem, vram, rx_kbs, tx_kbs, csv_path)
+    ts, sm, mem, vram, rx_kbs, tx_kbs = collect_utilization()
+    write_csv(ts, sm, mem, vram, rx_kbs, tx_kbs, csv_path)
     plot_from_csv(csv_path)
