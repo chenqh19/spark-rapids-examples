@@ -2,6 +2,7 @@
 sudo apt install python3.8-venv
 python3 -m venv ~/venv/sparkrapids
 source ~/venv/sparkrapids/bin/activate
+# deactivate
 
 pip install -U pip
 pip install jupyterlab pyspark==3.5.6 pandas numpy matplotlib ipywidgets
