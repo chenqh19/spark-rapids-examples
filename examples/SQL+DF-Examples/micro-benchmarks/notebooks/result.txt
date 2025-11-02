@@ -123,3 +123,19 @@ Expand&HashAggregate,2,2
 Windowing without skew,8,2
 Windowing with skew,7,2
 NDS Q14a subquery,6,2
+Expand&HashAggregate,33,1
+Windowing without skew,85,1
+Windowing with skew,89,1
+NDS Q14a subquery,16,1
+Expand&HashAggregate,31,2
+Windowing without skew,82,1
+Windowing with skew,84,2
+NDS Q14a subquery,24,2
+Expand&HashAggregate,9,2
+Windowing without skew,8,1
+Windowing with skew,10,2
+NDS Q14a subquery,3,2
+Expand&HashAggregate,9,2
+Windowing without skew,7,2
+Windowing with skew,10,2
+NDS Q14a subquery,4,2
