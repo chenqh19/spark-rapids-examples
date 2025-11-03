@@ -1,6 +1,9 @@
-import time, threading, math, csv
+import time, threading, math, csv, os
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
-import pynvml as nvml
+try:
+    import pynvml as nvml  # GPU metrics (optional when CPU_ONLY)
+except Exception:
+    nvml = None
 import psutil
 import matplotlib.pyplot as plt
 
@@ -8,11 +11,26 @@ SAMPLE_MS = 50
 DURATION_S = 100
 GPU_INDEX = 0
 
-def collect_utilization(sample_ms=SAMPLE_MS, duration_s=DURATION_S, gpu_index=GPU_INDEX):
-    nvml.nvmlInit()
-    h = nvml.nvmlDeviceGetHandleByIndex(gpu_index)
-    rx = nvml.NVML_PCIE_UTIL_RX_BYTES
-    tx = nvml.NVML_PCIE_UTIL_TX_BYTES
+def _as_bool_env(name: str, default: bool = False) -> bool:
+    val = os.environ.get(name)
+    if val is None:
+        return default
+    return str(val).strip().lower() in ("1", "true", "yes", "on")
+
+
+def collect_utilization(sample_ms=SAMPLE_MS, duration_s=DURATION_S, gpu_index=GPU_INDEX, cpu_only: bool | None = None):
+    # Determine mode: prefer explicit arg, else env CPU_ONLY
+    if cpu_only is None:
+        cpu_only = _as_bool_env("CPU_ONLY", False)
+
+    if not cpu_only and nvml is not None:
+        nvml.nvmlInit()
+        h = nvml.nvmlDeviceGetHandleByIndex(gpu_index)
+        rx = nvml.NVML_PCIE_UTIL_RX_BYTES
+        tx = nvml.NVML_PCIE_UTIL_TX_BYTES
+    else:
+        h = None
+        rx = tx = None
 
     ts, sm, mem, cpu, vram, rx_kbs, tx_kbs = [], [], [], [], [], [], []
     start = time.time()
@@ -20,16 +38,27 @@ def collect_utilization(sample_ms=SAMPLE_MS, duration_s=DURATION_S, gpu_index=GP
 
     def poll():
         def get_util():
-                return nvml.nvmlDeviceGetUtilizationRates(h)
+            if cpu_only or nvml is None or h is None:
+                class U:  # minimal duck type for nvmlUtilRates
+                    gpu = 0
+                    memory = 0
+                return U()
+            return nvml.nvmlDeviceGetUtilizationRates(h)
 
         def get_mem():
-                return nvml.nvmlDeviceGetMemoryInfo(h)
+            if cpu_only or nvml is None or h is None:
+                class M:
+                    used = 0
+                return M()
+            return nvml.nvmlDeviceGetMemoryInfo(h)
 
         def get_pcie():
+            if cpu_only or nvml is None or h is None:
+                return 0, 0
             try:
                 r = nvml.nvmlDeviceGetPcieThroughput(h, rx)  # KB/s
                 w = nvml.nvmlDeviceGetPcieThroughput(h, tx)
-            except nvml.NVMLError:
+            except Exception:
                 r = w = 0
             return r, w
 

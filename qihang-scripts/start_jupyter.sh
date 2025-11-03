@@ -6,6 +6,7 @@ source ~/venv/sparkrapids/bin/activate
 
 pip install -U pip
 pip install jupyterlab pyspark==3.5.6 pandas numpy matplotlib ipywidgets
+pip install psutil
 
 export SPARK_HOME="$HOME/spark/dist"
 mkdir -p "$SPARK_HOME/jars"
