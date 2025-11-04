@@ -101,12 +101,6 @@ cd $HOME && git clone https://github.com/apache/spark.git
 cd spark && git checkout v${SPARK_VER}
 git clean -xfd
 rm -rf ~/.m2/repository/org/apache/spark
-
-# ./dev/make-distribution.sh \
-#   --name nocuda \
-#   -Phadoop-3 -Pscala-${SCALA_BIN} \
-#   -DskipTests -Dmaven.test.skip=true
-
 # build distribution incl. Hive & ThriftServer (still skipping tests)
 ./dev/make-distribution.sh \
   --name withhive \
