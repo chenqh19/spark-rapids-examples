@@ -9,7 +9,7 @@ import psutil
 import matplotlib.pyplot as plt
 
 SAMPLE_MS = 50
-DURATION_S = 140
+DURATION_S = 50
 GPU_INDEX = 0
 
 def _as_bool_env(name: str, default: bool = False) -> bool:
@@ -127,7 +127,7 @@ def plot_from_csv(path_name):
                 vram_mb.append(float(row[3]))
                 rx.append(float(row[4]))
                 tx.append(float(row[5]))
-    fig, ax = plt.subplots(2,1, figsize=(10,5), sharex=True)
+    fig, ax = plt.subplots(2,1, figsize=(5,5), sharex=True)
     ax[0].plot(t, sm_u, label='SM %'); ax[0].plot(t, mem_u, label='Mem %'); ax[0].plot(t, cpu_u, label='CPU %')
     ax[0].legend(); ax[0].set_ylabel('%')
     # ax[1].plot(t, vram_mb, label='VRAM MB')
@@ -144,6 +144,6 @@ if __name__ == "__main__":
         path_name = "cpu_utilization"
     else:
         path_name = "gpu_utilization"
-    ts, sm, mem, cpu, vram, rx_kbs, tx_kbs = collect_utilization()
-    write_csv(ts, sm, mem, cpu, vram, rx_kbs, tx_kbs, out_csv=path_name+".csv")
+    # ts, sm, mem, cpu, vram, rx_kbs, tx_kbs = collect_utilization()
+    # write_csv(ts, sm, mem, cpu, vram, rx_kbs, tx_kbs, out_csv=path_name+".csv")
     plot_from_csv(path_name)
