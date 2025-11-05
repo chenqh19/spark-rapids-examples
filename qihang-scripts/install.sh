@@ -167,4 +167,7 @@ SCALA
 fi
 
 yes | sudo apt install python3-pip
+sudo apt install htop
 pip install nvidia-ml-py3
+pip install psutil
+pip install matplotlib
