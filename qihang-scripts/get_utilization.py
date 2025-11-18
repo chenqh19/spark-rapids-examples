@@ -1,4 +1,5 @@
 import time, threading, math, csv, os
+from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 try:
     import pynvml as nvml  # GPU metrics (optional when CPU_ONLY)
@@ -8,7 +9,7 @@ import psutil
 import matplotlib.pyplot as plt
 
 SAMPLE_MS = 50
-DURATION_S = 100
+DURATION_S = 50
 GPU_INDEX = 0
 
 def _as_bool_env(name: str, default: bool = False) -> bool:
@@ -18,7 +19,7 @@ def _as_bool_env(name: str, default: bool = False) -> bool:
     return str(val).strip().lower() in ("1", "true", "yes", "on")
 
 
-def collect_utilization(sample_ms=SAMPLE_MS, duration_s=DURATION_S, gpu_index=GPU_INDEX, cpu_only: bool | None = None):
+def collect_utilization(sample_ms=SAMPLE_MS, duration_s=DURATION_S, gpu_index=GPU_INDEX, cpu_only: Optional[bool] = None):
     # Determine mode: prefer explicit arg, else env CPU_ONLY
     if cpu_only is None:
         cpu_only = _as_bool_env("CPU_ONLY", False)
@@ -97,7 +98,7 @@ def collect_utilization(sample_ms=SAMPLE_MS, duration_s=DURATION_S, gpu_index=GP
     return ts, sm, mem, cpu, vram, rx_kbs, tx_kbs
 
 # --- Utilities to store and plot ---
-def write_csv(ts, sm, mem, cpu, vram, rx_kbs, tx_kbs, out_csv="gpu_utilization.csv"):
+def write_csv(ts, sm, mem, cpu, vram, rx_kbs, tx_kbs, out_csv):
     with open(out_csv, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["ms", "sm_util_pct", "mem_util_pct", "cpu_util_pct", "vram_used_mb", "pcie_rx_kbs", "pcie_tx_kbs"])
@@ -105,9 +106,9 @@ def write_csv(ts, sm, mem, cpu, vram, rx_kbs, tx_kbs, out_csv="gpu_utilization.c
             w.writerow([f"{ts[i]:.3f}", sm[i], mem[i], cpu[i], f"{vram[i]:.3f}", rx_kbs[i], tx_kbs[i]])
     return out_csv
 
-def plot_from_csv(csv_path, pdf_path="gpu_utilization.pdf"):
+def plot_from_csv(path_name):
     t, sm_u, mem_u, cpu_u, vram_mb, rx, tx = [], [], [], [], [], [], []
-    with open(csv_path, "r") as f:
+    with open(path_name+".csv", "r") as f:
         r = csv.reader(f)
         header = next(r, None)
         for row in r:
@@ -126,7 +127,7 @@ def plot_from_csv(csv_path, pdf_path="gpu_utilization.pdf"):
                 vram_mb.append(float(row[3]))
                 rx.append(float(row[4]))
                 tx.append(float(row[5]))
-    fig, ax = plt.subplots(2,1, figsize=(10,5), sharex=True)
+    fig, ax = plt.subplots(2,1, figsize=(5,5), sharex=True)
     ax[0].plot(t, sm_u, label='SM %'); ax[0].plot(t, mem_u, label='Mem %'); ax[0].plot(t, cpu_u, label='CPU %')
     ax[0].legend(); ax[0].set_ylabel('%')
     # ax[1].plot(t, vram_mb, label='VRAM MB')
@@ -134,11 +135,15 @@ def plot_from_csv(csv_path, pdf_path="gpu_utilization.pdf"):
     ax[1].plot(t, rx, label='PCIe RX KB/s'); ax[1].plot(t, tx, label='PCIe TX KB/s')
     ax[1].legend(); ax[1].set_ylabel('KB/s'); ax[1].set_xlabel('ms')
     plt.tight_layout()
-    fig.savefig(pdf_path, bbox_inches='tight')
+    fig.savefig(path_name+".pdf", bbox_inches='tight')
     plt.show()
 
 if __name__ == "__main__":
-    csv_path = "gpu_utilization.csv"
-    ts, sm, mem, cpu, vram, rx_kbs, tx_kbs = collect_utilization()
-    write_csv(ts, sm, mem, cpu, vram, rx_kbs, tx_kbs, csv_path)
-    plot_from_csv(csv_path)
+    cpu_only = _as_bool_env("CPU_ONLY", False)
+    if cpu_only:
+        path_name = "cpu_utilization"
+    else:
+        path_name = "gpu_utilization"
+    # ts, sm, mem, cpu, vram, rx_kbs, tx_kbs = collect_utilization()
+    # write_csv(ts, sm, mem, cpu, vram, rx_kbs, tx_kbs, out_csv=path_name+".csv")
+    plot_from_csv(path_name)
