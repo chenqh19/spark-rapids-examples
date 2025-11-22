@@ -1,7 +1,7 @@
 sudo chgrp sudo /dev/dsa/wq*
 sudo chmod 660 /dev/dsa/wq*
 
-sudo -E env HOME=/home/chenqh23 \ 
+sudo -E env HOME=/home/chenqh23 \
   SPARK_HOME=/home/chenqh23/spark/dist \
   QPL_INCLUDE=/home/chenqh23/qpl_install_dir/include \
   QPL_LIB=/home/chenqh23/qpl_install_dir/lib \
