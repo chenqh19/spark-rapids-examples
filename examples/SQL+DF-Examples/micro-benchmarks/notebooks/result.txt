@@ -321,3 +321,40 @@ Expand&HashAggregate,10,2
 Windowing without skew,18,2
 Windowing with skew,51,2
 NDS Q14a subquery,4,2
+Expand&HashAggregate,9,2
+Expand&HashAggregate,9,2
+Windowing without skew,18,2
+Windowing with skew,56,2
+NDS Q14a subquery,5,2
+Windowing without skew,9,2
+Expand&HashAggregate,9,2
+Windowing without skew,8,2
+Windowing with skew,11,2
+NDS Q14a subquery,4,2
+Expand&HashAggregate,10,2
+Windowing without skew,15,2
+Windowing with skew,17,2
+Expand&HashAggregate,9,2
+Windowing without skew,17,2
+Windowing with skew,32,2
+NDS Q14a subquery,5,2
+Expand&HashAggregate,11,2
+Windowing without skew,26,2
+Windowing with skew,30,2
+NDS Q14a subquery,4,2
+Expand&HashAggregate,10.5,10
+Windowing without skew,7.3,10
+Expand&HashAggregate,10.42,10
+Windowing without skew,7.82,10
+Expand&HashAggregate,10.40,10
+Windowing without skew,7.67,10
+Windowing with skew,29.51,10
+NDS Q14a subquery,2.55,10
+Expand&HashAggregate,8.62,10
+Windowing without skew,7.68,10
+Windowing with skew,32.49,10
+NDS Q14a subquery,2.86,10
+Expand&HashAggregate,8.73,10
+Windowing without skew,7.81,10
+Windowing with skew,31.79,10
+NDS Q14a subquery,2.76,10
