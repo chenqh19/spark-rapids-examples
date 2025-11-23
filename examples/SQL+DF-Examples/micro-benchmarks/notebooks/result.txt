@@ -358,3 +358,7 @@ Expand&HashAggregate,8.73,10
 Windowing without skew,7.81,10
 Windowing with skew,31.79,10
 NDS Q14a subquery,2.76,10
+Expand&HashAggregate,8.70,10
+Windowing without skew,7.69,10
+Windowing with skew,30.21,10
+NDS Q14a subquery,2.46,10
