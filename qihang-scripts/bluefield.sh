@@ -4,19 +4,20 @@ sudo apt-get update
 sudo apt-get install -y doca-runtime doca-sdk doca-tools
 sudo -n apt-get install -y doca-cx-runtime doca-cx-tools || true
 sudo -n apt-get install -y libjson-c-dev
-sudo -n apt install meson ninja || true
+sudo -n apt install meson ninja-build || true
 
+sudo apt-get install -y rshim
 sudo systemctl enable --now rshim
-sudo ip addr add 192.168.100.1/24 dev tmfifo_net0 || true
-ping -c1 192.168.100.2
 
 # password: ubuntu
-openssl passwd -1
-# copy the output, e.g. $1$3B0R...$TlHr...
-echo "ubuntu_PASSWORD='$1$3B0R...$TlHr...'" > bf.cfg
+HASH=$(openssl passwd -6 'chenqh23chenqh23')
+printf "ubuntu_PASSWORD='%s'\n" "$HASH" > bf.cfg
+# ### TODO: do on my Mac ###: scp Downloads/bf-bundle-3.1.0-76_25.07_ubuntu-22.04_prod.bfb chenqh23@clgpu020.clemson.cloudlab.us:~
 
-sudo bfb-install --rshim rshim0 --bfb bf-bundle-3.1.0-76_25.07_ubuntu-22.04_prod.bfb --config bf.cfg
+sudo bfb-install --rshim rshim0 --bfb ~/bf-bundle-3.1.0-76_25.07_ubuntu-22.04_prod.bfb --config bf.cfg
 
+sudo ip addr add 192.168.100.1/24 dev tmfifo_net0 || true
+ping -c1 192.168.100.2
 sudo ifconfig tmfifo_net0 192.168.100.1/24
 ssh ubuntu@192.168.100.2 # password: chenqh23chenqh23
 
