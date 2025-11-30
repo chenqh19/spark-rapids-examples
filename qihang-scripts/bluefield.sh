@@ -52,23 +52,13 @@ cd ~
 git clone https://github.com/DPDK/dpdk.git
 cd dpdk
 scp -r /users/chenqh23/dpdk/ ubuntu@192.168.100.2:~
-# # TODO: problem here: does not include mlx5
-# meson setup build --cross-file config/arm/arm64_bluefield_linux_gcc --buildtype=release
-# ninja -C build
-# rsync -avz -e ssh build/ ubuntu@192.168.100.2:~/dpdk-build/
-# scp ~/dpdk/usertools/dpdk-devbind.py ubuntu@192.168.100.2:/tmp/
 
-# ssh ubuntu@192.168.100.2 
-# sudo rsync -av ~/dpdk-build/ /usr/local/ && sudo ldconfig
 sudo ln -sf /usr/local/app/dpdk-testpmd /usr/local/bin/dpdk-testpmd
 echo 1024 | sudo tee /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
 sudo mkdir -p /mnt/huge
 sudo mount -t hugetlbfs -o pagesize=2M nodev /mnt/huge
 grep -i Huge /proc/meminfo | egrep 'HugePages_Total|HugePages_Free'
 
-# sudo modprobe mlx5_core mlx5_ib
-# sudo install -m 0755 /tmp/dpdk-devbind.py /usr/local/bin/dpdk-devbind.py
-# dpdk-devbind.py -s
 
 
 ### ON SMARTNIC ###
@@ -79,7 +69,23 @@ meson setup build --buildtype=release \
   -Ddisable_drivers=all \
   -Denable_drivers=bus/auxiliary,bus/pci,mempool/ring,common/mlx5,net/mlx5 \
   -Dibverbs_link=dlopen
-ninja -C build # it will fail
+ninja -C build 
+### it will fail ###
+# ubuntu@localhost:~/dpdk$ ninja -C build
+# ninja: Entering directory `build'
+# [890/921] Linking target drivers/common/mlx5/linux/librte_common_mlx5_glue.so.24.0
+# FAILED: [code=1] drivers/common/mlx5/linux/librte_common_mlx5_glue.so.24.0 
+# cc  -o drivers/common/mlx5/linux/librte_common_mlx5_glue.so.24.0 drivers/common/mlx5/linux/librte_common_mlx5_glue.so.24.0.p/mlx5_glue.c.o -Wl,--as-needed -Wl,--no-undefined -Wl,-O1 -shared -fPIC -Wl,-soname,librte_common_mlx5_glue.so.24.0 -Wl,--no-as-needed -pthread -Wl,--start-group -lm -ldl -lnuma -Wl,-export-dynamic -Wl,-h,librte_common_mlx5_glue.so.24.0 /usr/lib/aarch64-linux-gnu/libmlx5.so /usr/lib/aarch64-linux-gnu/libibverbs.so -Wl,--end-group
+# /usr/bin/ld: drivers/common/mlx5/linux/librte_common_mlx5_glue.so.24.0.p/mlx5_glue.c.o: in function `mlx5_glue_dv_destroy_steering_anchor':
+# mlx5_glue.c:(.text+0x210): undefined reference to `mlx5dv_destroy_steering_anchor'
+# /usr/bin/ld: drivers/common/mlx5/linux/librte_common_mlx5_glue.so.24.0.p/mlx5_glue.c.o: in function `mlx5_glue_dv_create_steering_anchor':
+# mlx5_glue.c:(.text+0x220): undefined reference to `mlx5dv_create_steering_anchor'
+# /usr/bin/ld: drivers/common/mlx5/linux/librte_common_mlx5_glue.so.24.0.p/mlx5_glue.c.o: in function `mlx5_glue_dr_create_flow_action_send_to_kernel':
+# mlx5_glue.c:(.text+0x230): undefined reference to `mlx5dv_dr_action_create_dest_root_table'
+# collect2: error: ld returned 1 exit status
+# [899/921] Compiling C object app/dpdk-test.p/test_test_ring.c.o
+# ninja: build stopped: subcommand failed.
+####################
 
 # doca
 python3 -m ensurepip --upgrade || true
