@@ -54,6 +54,13 @@ grep -i Huge /proc/meminfo | egrep 'HugePages_Total|HugePages_Free'
 
 
 ### ON SMARTNIC ###
+
+# DOCA
+cd /opt/mellanox/doca/applications
+meson /tmp/build -Denable_all_applications=false -Denable_file_compression=true
+ninja -C /tmp/build
+./doca_file_compression -p 03:00.0 -r 03:00.0 -f received.txt
+
 # dpdk
 sudo dpkg -i /tmp/ninja-build_*arm64.deb
 sudo dpkg -i /tmp/meson_*all.deb
@@ -63,8 +70,7 @@ set -e
 cd ~/dpdk
 git checkout v20.11
 rm -rf build
-# /usr/bin/meson setup ~/dpdk/build --buildtype=release -Ddefault_library=shared -Dibverbs_link=dlopen
-# ninja -C ~/dpdk/build
+/usr/bin/meson setup ~/dpdk/build --buildtype=release -Ddefault_library=shared -Dibverbs_link=dlopen
 unset PYTHONPATH; sudo -E /usr/bin/meson install -C ~/dpdk/build
 sudo ldconfig
 
@@ -83,9 +89,3 @@ sudo dpdk-testpmd -l 0-1 -n 4 -m 1024 \
 
 
 
-# doca
-python3 -m ensurepip --upgrade || true
-python3 -m pip install --no-index --find-links /tmp/wheels meson ninja
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-. ~/.bashrc
-sudo dpkg -i /tmp/libjson-c5_*arm64.deb /tmp/libjson-c-dev_*arm64.deb || sudo apt-get -f install
