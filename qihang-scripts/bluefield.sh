@@ -1,8 +1,10 @@
 wget https://www.mellanox.com/downloads/DOCA/DOCA_v3.1.0/host/doca-host_3.1.0-091000-25.07-ubuntu2004_amd64.deb
 sudo dpkg -i doca-host_3.1.0-091000-25.07-ubuntu2004_amd64.deb
 sudo apt-get update
-sudo apt-get install -y doca-runtime doca-sdk doca-tools
-sudo -n apt-get install -y doca-cx-runtime doca-cx-tools || true
+sudo apt-get install doca-all
+sudo /etc/init.d/openibd restart
+sudo mst restart
+
 sudo -n apt-get install -y libjson-c-dev
 sudo -n apt install meson ninja-build || true
 
@@ -51,15 +53,7 @@ sudo mkdir -p /mnt/huge
 sudo mount -t hugetlbfs -o pagesize=2M nodev /mnt/huge
 grep -i Huge /proc/meminfo | egrep 'HugePages_Total|HugePages_Free'
 
-
-
 ### ON SMARTNIC ###
-
-# DOCA
-cd /opt/mellanox/doca/applications
-meson /tmp/build -Denable_all_applications=false -Denable_file_compression=true
-ninja -C /tmp/build
-./doca_file_compression -p 03:00.0 -r 03:00.0 -f received.txt
 
 # dpdk
 sudo dpkg -i /tmp/ninja-build_*arm64.deb
@@ -89,3 +83,14 @@ sudo dpdk-testpmd -l 0-1 -n 4 -m 1024 \
 
 
 
+### FILE COMPRESSION ###
+# BOTH sides
+cd /opt/mellanox/doca/applications
+meson /tmp/build -Denable_all_applications=false -Denable_file_compression=true
+ninja -C /tmp/build
+cd /tmp/build/file_compression/
+# DPU side (first)
+./doca_file_compression -p 03:00.0 -r 81:00.0 -f received.txt
+# HOST side (second)
+echo "Message from host!" > send.txt
+./doca_file_compression -p 0000:81:00.0 -f send.txt
