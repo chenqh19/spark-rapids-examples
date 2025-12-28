@@ -362,3 +362,74 @@ Expand&HashAggregate,8.70,10
 Windowing without skew,7.69,10
 Windowing with skew,30.21,10
 NDS Q14a subquery,2.46,10
+Expand&HashAggregate,8.66,10
+Windowing without skew,8.28,10
+Windowing with skew,29.50,10
+NDS Q14a subquery,2.71,10
+Windowing without skew,7.89,10
+Expand&HashAggregate,9.26,10
+Windowing without skew,7.94,10
+Windowing with skew,29.53,10
+NDS Q14a subquery,3.01,10
+NDS Q14a subquery,3.54,10
+Expand&HashAggregate,10.47,10
+Windowing without skew,7.74,10
+NDS Q14a subquery,2.73,10
+NDS Q14a subquery,2.64,10
+Expand&HashAggregate,8.54,10
+Windowing without skew,8.52,10
+Windowing with skew,30.36,10
+NDS Q14a subquery,2.66,10
+Expand&HashAggregate,8.27,10
+Windowing without skew,7.44,10
+Windowing without skew,7.25,10
+Windowing without skew,7.17,10
+Windowing without skew,6.88,10
+NDS Q14a subquery,1.51,10
+NDS Q14a subquery,2.00,10
+Windowing without skew,6.74,10
+NDS Q14a subquery,1.71,10
+Expand&HashAggregate,9,2
+Windowing without skew,8,2
+Windowing with skew,12,2
+NDS Q14a subquery,3,2
+Expand&HashAggregate,9,2
+Windowing without skew,9,2
+Windowing with skew,12,2
+NDS Q14a subquery,2,10
+NDS Q14a subquery,1.56,10
+Windowing without skew,6.49,10
+NDS Q14a subquery,2.35,10
+NDS Q14a subquery,2.88,10
+Windowing without skew,6.44,10
+NDS Q14a subquery,2.67,10
+NDS Q14a subquery,2.86,10
+Windowing without skew,10.96,10
+NDS Q14a subquery,3.95,10
+NDS Q14a subquery,4.72,10
+Windowing without skew,11.11,10
+NDS Q14a subquery,4.20,10
+NDS Q14a subquery,4.49,10
+NDS Q14a subquery,6.82,10
+NDS Q14a subquery,6.70,10
+Windowing without skew,10.89,10
+NDS Q14a subquery,4.00,10
+NDS Q14a subquery,4.74,10
+NDS Q14a subquery,6.71,10
+NDS Q14a subquery,1.94,10
+NDS Q14a subquery,1.91,10
+Expand&HashAggregate,8,2
+Windowing without skew,9,2
+Windowing with skew,12,2
+NDS Q14a subquery,2,10
+Expand&HashAggregate,8,2
+Windowing without skew,10,2
+Windowing with skew,13,2
+NDS Q14a subquery,2,10
+IAA simple year filter,0,1
+IAA simple year filter,0,10
+IAA simple year filter,0,10
+IAA simple year filter,0,10
+Windowing without skew,10.55,10
+NDS Q14a subquery,2.06,10
+NDS Q14a subquery,2.01,10
