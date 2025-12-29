@@ -442,3 +442,52 @@ IAA simple year filter,0.14,10
 NDS Q14a subquery,2.10,10
 IAA simple year filter,0.09,1
 IAA simple year filter,0.14,10
+NDS Q14a subquery,2.08,10
+IAA simple year filter,0.08,10
+Expand&HashAggregate,7.00,2
+Windowing without skew,7.68,2
+Windowing with skew,11.73,2
+NDS Q14a subquery,1.36,10
+IAA simple year filter,0.08,10
+IAA simple year filter,0.14,10
+IAA simple year filter,0.14,10
+IAA simple year filter,0.10,10
+IAA simple year filter,0.10,10
+IAA simple year filter,0.10,10
+IAA simple year filter,0.14,10
+IAA simple year filter,0.13,1000
+NDS Q14a subquery,2.05,2
+IAA simple year filter,0.08,10
+NDS Q14a subquery,2.00,2
+IAA simple year filter,0.09,100
+IAA simple year filter,0.17,100
+IAA simple year filter,0.17,100
+NDS Q14a subquery,2.08,2
+IAA simple year filter,0.09,100
+NDS Q14a subquery,2.20,2
+IAA simple year filter,0.09,100
+NDS Q14a subquery,2.17,2
+IAA simple year filter,0.08,100
+IAA simple year filter,0.08,100
+Expand&HashAggregate,6.97,2
+Windowing without skew,6.23,2
+Windowing with skew,11.96,2
+NDS Q14a subquery,1.33,10
+IAA simple year filter,0.08,100
+IAA simple year filter,0.09,100
+Expand&HashAggregate,7.06,2
+Windowing without skew,7.33,2
+Windowing with skew,11.97,2
+NDS Q14a subquery,1.30,10
+IAA simple year filter,0.08,100
+IAA simple year filter,0.09,100
+Expand&HashAggregate,7.12,2
+Windowing without skew,7.87,2
+Windowing with skew,10.22,2
+Expand&HashAggregate,7.48,2
+Expand&HashAggregate,7.18,2
+Windowing without skew,5.26,2
+Windowing with skew,10.46,2
+NDS Q14a subquery,1.58,10
+IAA simple year filter,0.09,100
+IAA simple year filter,0.12,100
