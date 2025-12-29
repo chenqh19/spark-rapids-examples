@@ -433,3 +433,12 @@ IAA simple year filter,0,10
 Windowing without skew,10.55,10
 NDS Q14a subquery,2.06,10
 NDS Q14a subquery,2.01,10
+NDS Q14a subquery,1.95,10
+NDS Q14a subquery,4.42,10
+IAA simple year filter,0.16,10
+NDS Q14a subquery,3.44,10
+IAA simple year filter,0.08,10
+IAA simple year filter,0.14,10
+NDS Q14a subquery,2.10,10
+IAA simple year filter,0.09,1
+IAA simple year filter,0.14,10
